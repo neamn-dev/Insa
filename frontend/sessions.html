@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="View and manage your active sessions.">
+  <title>Sessions — AuthGuard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="page-container">
+    <div class="auth-card sessions-card">
+      <div class="auth-header">
+        <div class="auth-logo">🖥️</div>
+        <h1>Active Sessions</h1>
+        <p>Manage devices and browsers that are currently logged in</p>
+      </div>
+
+      <!-- Alert Banner -->
+      <div id="alert" class="alert" role="alert">
+        <span id="alert-icon"></span>
+        <span id="alert-message"></span>
+      </div>
+
+      <!-- Action bar -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+        <a href="dashboard.html" class="btn btn-outline">← Back to Dashboard</a>
+        <button class="btn btn-danger" id="revoke-all-btn" onclick="revokeAllOtherSessions()">
+          Revoke All Others
+        </button>
+      </div>
+
+      <!-- Sessions List -->
+      <div class="sessions-list" id="sessions-list">
+        <div class="empty-state">
+          <div class="empty-icon">🔄</div>
+          <p>Loading sessions...</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    (async () => {
+      const authenticated = await ensureAuthenticated();
+      if (!authenticated) return;
+      loadSessions();
+    })();
+
+    async function loadSessions() {
+      const container = document.getElementById('sessions-list');
+
+      try {
+        const res = await authFetch('/api/sessions');
+        const data = await res.json();
+
+        if (!res.ok) {
+          container.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Failed to load sessions.</p></div>';
+          return;
+        }
+
+        const sessions = data.sessions;
+        if (!sessions || sessions.length === 0) {
+          container.innerHTML = '<div class="empty-state"><div class="empty-icon">🔒</div><p>No active sessions found.</p></div>';
+          return;
+        }
+
+        container.innerHTML = sessions.map(s => {
+          const isCurrent = s.is_current;
+          const deviceIcon = detectDeviceIcon(s.user_agent);
+          const parsedDevice = parseDeviceName(s.user_agent);
+          const createdStr = s.created_at ? new Date(s.created_at).toLocaleString() : '—';
+          const lastActiveStr = s.last_active ? new Date(s.last_active).toLocaleString() : '—';
+          return `
+            <div class="session-card ${isCurrent ? 'current-session' : ''}">
+              <div class="session-info">
+                <div class="session-icon">${deviceIcon}</div>
+                <div class="session-details">
+                  <div class="session-device">${escapeHtml(parsedDevice)}</div>
+                  <div class="session-meta">
+                    <span>📍 ${escapeHtml(s.ip_address || 'Unknown IP')}</span>
+                    <span>📅 Created: ${escapeHtml(createdStr)}</span>
+                    <span>🕐 Last active: ${escapeHtml(lastActiveStr)}</span>
+                    ${isCurrent ? '<span class="badge badge-current">This device</span>' : '<span class="badge badge-active">Active</span>'}
+                  </div>
+                </div>
+              </div>
+              ${isCurrent
+                ? '<span style="font-size: 0.75rem; color: var(--text-muted);">Current session</span>'
+                : `<button class="btn btn-danger" onclick="revokeSession('${s.id}')">Revoke</button>`
+              }
+            </div>
+          `;
+        }).join('');
+
+      } catch (err) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-icon">❌</div><p>Session expired. Please log in again.</p></div>';
+        setTimeout(() => window.location.href = 'login.html', 2000);
+      }
+    }
+
+    function detectDeviceIcon(ua) {
+      if (!ua) return '🖥️';
+      const lower = ua.toLowerCase();
+      if (lower.includes('mobile') || lower.includes('android') || lower.includes('iphone')) return '📱';
+      if (lower.includes('tablet') || lower.includes('ipad')) return '📱';
+      if (lower.includes('mac')) return '💻';
+      if (lower.includes('windows')) return '🖥️';
+      if (lower.includes('linux')) return '🐧';
+      return '🌐';
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function parseDeviceName(ua) {
+      if (!ua || ua === 'Unknown Device') return 'Unknown Device';
+      let browser = 'Unknown Browser';
+      if (ua.includes('Edg/')) browser = 'Microsoft Edge';
+      else if (ua.includes('Chrome/')) browser = 'Google Chrome';
+      else if (ua.includes('Firefox/')) browser = 'Mozilla Firefox';
+      else if (ua.includes('Safari/') && !ua.includes('Chrome')) browser = 'Safari';
+      let os = '';
+      if (ua.includes('Windows NT 10')) os = 'Windows';
+      else if (ua.includes('Mac OS X')) os = 'macOS';
+      else if (ua.includes('Linux')) os = 'Linux';
+      else if (ua.includes('Android')) os = 'Android';
+      else if (ua.includes('iPhone') || ua.includes('iPad')) os = 'iOS';
+      return os ? `${browser} on ${os}` : browser;
+    }
+
+    async function revokeSession(sessionId) {
+      try {
+        const res = await authFetch('/api/sessions/revoke', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: sessionId })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showAlert('success', data.message || 'Session revoked.');
+          loadSessions();
+        } else {
+          showAlert('danger', data.message || 'Failed to revoke session.');
+        }
+      } catch (err) {
+        showAlert('danger', 'Network error.');
+      }
+    }
+
+    async function revokeAllOtherSessions() {
+      try {
+        const res = await authFetch('/api/sessions/revoke', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ revoke_all_other: true })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showAlert('success', data.message || 'All other sessions revoked.');
+          loadSessions();
+        } else {
+          showAlert('danger', data.message || 'Failed to revoke sessions.');
+        }
+      } catch (err) {
+        showAlert('danger', 'Network error.');
+      }
+    }
+
+  </script>
+</body>
+</html>
