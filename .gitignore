@@ -1,75 +1,96 @@
-# ========================
-# Python
-# ========================
+# ==========================================
+# SyncWrite — Comprehensive .gitignore
+# ==========================================
+
+# ------------------------------------------
+# Environment & Secrets (Never commit credentials)
+# ------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+firebase-service-account*.json
+
+# ------------------------------------------
+# Python & Flask Backend
+# ------------------------------------------
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 *.egg
 *.egg-info/
-dist/
-build/
-*.whl
 .Python
 env/
 venv/
 .venv/
+ENV/
 pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
 
-# ========================
-# Environment & Secrets
-# ========================
-.env
-.env.local
-.env.production
-*.pem
-*.key
-firebase-service-account.json
+# Backend specific virtualenvs & caches
+backend/__pycache__/
+backend/*/__pycache__/
+backend/venv/
+backend/.venv/
+backend/.pytest_cache/
 
-# ========================
-# Database
-# ========================
+# ------------------------------------------
+# Databases & Local Storage
+# ------------------------------------------
 *.db
 *.sqlite
 *.sqlite3
 database/
+data/
 backend/database/
 backend/data/
 
-# ========================
-# IDE & Editors
-# ========================
+# ------------------------------------------
+# Node.js & React Frontend
+# ------------------------------------------
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+frontend/dist-ssr/
+.vite/
+frontend/.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# ------------------------------------------
+# IDE & Code Editors
+# ------------------------------------------
 .vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
 .idea/
 *.swp
 *.swo
 *~
 .project
 .settings/
+.zed/
 
-# ========================
-# OS Files
-# ========================
+# ------------------------------------------
+# Operating System Files
+# ------------------------------------------
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 Desktop.ini
-ehthumbs.db
-
-# ========================
-# Node (legacy cleanup)
-# ========================
-node_modules/
-package-lock.json
-dist/
-
-# ========================
-# Logs
-# ========================
-*.log
-npm-debug.log*
-
-# ========================
-# Misc
-# ========================
-.cache/
-.tmp/
