@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { signInWithGoogle } from '../services/firebase';
-import { AlertCircle, ShieldAlert, Eye, EyeOff, FileText } from 'lucide-react';
+import { AlertCircle, ShieldAlert, Eye, EyeOff, FileText, X } from 'lucide-react';
 
 export const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -26,6 +26,16 @@ export const LoginPage = () => {
       }
     }
   }, []);
+
+  const handleEmailChange = (e) => {
+    setEmail(e.target.value);
+    if (error) setError('');
+  };
+
+  const handlePasswordChange = (e) => {
+    setPassword(e.target.value);
+    if (error) setError('');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -54,29 +64,17 @@ export const LoginPage = () => {
     try {
       const res = await signInWithGoogle();
       if (!res.success) {
-        if (res.unauthorizedDomain || (res.error && !res.error.includes('popup-closed-by-user'))) {
-          window.location.href = '/api/auth/google/redirect?mode=direct';
-          return;
-        }
-        if (res.error && res.error.includes('popup-closed-by-user')) {
-          setError('Sign-in popup was closed before completing authentication.');
-        } else {
-          setError(res.error || 'Google sign-in popup failed.');
-        }
-        setLoading(false);
+        window.location.href = '/api/auth/google/redirect';
         return;
       }
       await loginWithFirebaseToken(res.idToken);
       navigate('/dashboard');
     } catch (err) {
-      window.location.href = '/api/auth/google/redirect?mode=direct';
+      window.location.href = '/api/auth/google/redirect';
     } finally {
       setLoading(false);
     }
   };
-
-
-
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-blue-950 flex items-center justify-center p-4 relative overflow-hidden">
@@ -85,7 +83,7 @@ export const LoginPage = () => {
       <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* White card */}
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-8 relative animate-fadeIn">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 sm:p-8 relative animate-fadeIn">
 
         {/* Logo */}
         <div className="flex flex-col items-center mb-7">
@@ -98,20 +96,29 @@ export const LoginPage = () => {
 
         {/* Alerts */}
         {suspiciousLogin && (
-          <div className="mb-5 p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-start space-x-2.5 text-amber-800 text-xs">
-            <ShieldAlert className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="font-semibold">Suspicious Login Detected!</p>
-              <p className="mt-0.5">Previous device: <span className="font-semibold">{suspiciousLogin.previous_device}</span></p>
-              <button onClick={clearSuspiciousNotice} className="mt-1.5 font-semibold underline text-amber-900">Dismiss</button>
+          <div className="mb-5 p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-start justify-between text-amber-800 text-xs">
+            <div className="flex items-start space-x-2.5">
+              <ShieldAlert className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold">Suspicious Login Detected!</p>
+                <p className="mt-0.5">Previous device: <span className="font-semibold">{suspiciousLogin.previous_device}</span></p>
+              </div>
             </div>
+            <button onClick={clearSuspiciousNotice} className="p-1 hover:bg-amber-100 rounded-lg text-amber-700 transition" title="Dismiss">
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
         )}
 
         {error && (
-          <div className="mb-5 p-3.5 bg-red-50 border border-red-200 rounded-xl flex items-start space-x-2.5 text-red-700 text-xs">
-            <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-            <p>{error}</p>
+          <div className="mb-5 p-3.5 bg-red-50 border border-red-200 rounded-xl flex items-start justify-between text-red-700 text-xs animate-fadeIn">
+            <div className="flex items-start space-x-2.5">
+              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+              <p className="font-medium">{error}</p>
+            </div>
+            <button onClick={() => setError('')} className="p-1 hover:bg-red-100 rounded-lg text-red-500 transition" title="Dismiss">
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
         )}
 
@@ -123,10 +130,12 @@ export const LoginPage = () => {
               id="login-email"
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={handleEmailChange}
               placeholder="Enter your email"
               required
-              className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition bg-white"
+              className={`w-full px-4 py-2.5 border rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition bg-white ${
+                error ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-slate-300 focus:ring-brand-500 focus:border-brand-500'
+              }`}
             />
           </div>
 
@@ -137,10 +146,12 @@ export const LoginPage = () => {
                 id="login-password"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={handlePasswordChange}
                 placeholder="Enter your password"
                 required
-                className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition bg-white pr-11"
+                className={`w-full px-4 py-2.5 border rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition bg-white pr-11 ${
+                  error ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-slate-300 focus:ring-brand-500 focus:border-brand-500'
+                }`}
               />
               <button
                 type="button"

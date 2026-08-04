@@ -51,26 +51,35 @@ def login():
     try:
         user = auth_service.get_user_by_email(email)
         
+        if not user:
+            auth_service.record_login_attempt(email, success=False, ip_address=request.remote_addr, user_agent=request.headers.get('User-Agent'))
+            return jsonify({"status": "fail", "message": "Invalid email or password. If you don't have an account, please register first."}), 401
+
         # 1. Check brute-force lockout
-        if user:
-            is_locked, remaining = auth_service.is_account_locked(user)
+        is_locked, remaining = auth_service.is_account_locked(user)
+        if is_locked:
+            return jsonify({
+                "status": "fail",
+                "message": f"Account locked due to too many failed attempts. Try again in {remaining} seconds."
+            }), 429
+
+        # 2. Check if account was created via Google OAuth without a password
+        if not user.password_hash:
+            return jsonify({
+                "status": "fail",
+                "message": "This email was registered using Google Sign-In. Please click 'Sign in with Google' to log in."
+            }), 400
+
+        # 3. Verify password
+        if not check_password_hash(user.password_hash, password):
+            auth_service.record_login_attempt(email, success=False, ip_address=request.remote_addr, user_agent=request.headers.get('User-Agent'))
+            updated_user = auth_service.get_user_by_email(email)
+            is_locked, remaining = auth_service.is_account_locked(updated_user)
             if is_locked:
                 return jsonify({
                     "status": "fail",
-                    "message": f"Account locked due to too many failed attempts. Try again in {remaining} seconds."
+                    "message": f"Account locked due to 5 consecutive failed attempts. Locked for {remaining} seconds."
                 }), 429
-
-        # 2. Verify password
-        if not user or not user.password_hash or not check_password_hash(user.password_hash, password):
-            auth_service.record_login_attempt(email, success=False, ip_address=request.remote_addr, user_agent=request.headers.get('User-Agent'))
-            if user:
-                updated_user = auth_service.get_user_by_email(email)
-                is_locked, remaining = auth_service.is_account_locked(updated_user)
-                if is_locked:
-                    return jsonify({
-                        "status": "fail",
-                        "message": f"Account locked due to 5 consecutive failed attempts. Locked for {remaining} seconds."
-                    }), 429
             return jsonify({"status": "fail", "message": "Invalid email or password."}), 401
 
         # 3. Successful login

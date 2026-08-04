@@ -79,24 +79,33 @@ export const EditorToolbar = ({ editor, disabled = false, onExportMarkdown, onIm
   };
 
   return (
-    <div className="bg-white border-b border-slate-200">
+    <div className="bg-white border-b border-slate-200 relative">
+      {/* Outside Click Backdrop for Menu */}
+      {activeMenu && (
+        <div
+          className="fixed inset-0 z-30 bg-transparent"
+          onClick={() => setActiveMenu(null)}
+        />
+      )}
 
       {/* Google Docs-style Menu Bar */}
-      <div className="flex items-center space-x-1 px-4 py-1 border-b border-slate-100 text-xs text-slate-600 font-medium relative">
+      <div className="flex items-center space-x-1 px-2 sm:px-4 py-1 border-b border-slate-100 text-xs text-slate-600 font-medium relative z-40 flex-wrap gap-y-1">
         {/* File Menu */}
         <div className="relative">
           <button
+            type="button"
             onClick={() => toggleMenu('file')}
             className={`px-2 py-0.5 rounded hover:bg-slate-100 transition ${activeMenu === 'file' ? 'bg-slate-100 text-slate-900 font-semibold' : ''}`}
           >
             File
           </button>
           {activeMenu === 'file' && (
-            <div className="absolute left-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 text-xs animate-scaleIn">
+            <div className="absolute left-0 top-full mt-1 w-52 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 text-xs animate-scaleIn">
               {onExportMarkdown && (
                 <button
+                  type="button"
                   onClick={() => { onExportMarkdown(); setActiveMenu(null); }}
-                  className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 flex items-center justify-between text-slate-700"
+                  className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 flex items-center justify-between text-slate-700 font-medium"
                 >
                   <span>Export as Markdown (.md)</span>
                   <Download className="w-3.5 h-3.5 text-slate-400" />
@@ -104,19 +113,22 @@ export const EditorToolbar = ({ editor, disabled = false, onExportMarkdown, onIm
               )}
               {onImportMarkdown && (
                 <button
+                  type="button"
                   onClick={() => { onImportMarkdown(); setActiveMenu(null); }}
-                  className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 flex items-center justify-between text-slate-700"
+                  className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 flex items-center justify-between text-slate-700 font-medium"
                 >
                   <span>Import Document</span>
                   <Upload className="w-3.5 h-3.5 text-slate-400" />
                 </button>
               )}
+              <div className="my-1 border-t border-slate-100" />
               <button
+                type="button"
                 onClick={handlePrintPDF}
-                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 flex items-center justify-between text-slate-700"
+                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 flex items-center justify-between text-slate-700 font-medium"
               >
                 <span>Print / Save as PDF</span>
-                <span className="text-[10px] text-slate-400">Ctrl+P</span>
+                <span className="text-[10px] text-slate-400 font-mono">Ctrl+P</span>
               </button>
             </div>
           )}
@@ -125,40 +137,53 @@ export const EditorToolbar = ({ editor, disabled = false, onExportMarkdown, onIm
         {/* Edit Menu */}
         <div className="relative">
           <button
+            type="button"
             onClick={() => toggleMenu('edit')}
             className={`px-2 py-0.5 rounded hover:bg-slate-100 transition ${activeMenu === 'edit' ? 'bg-slate-100 text-slate-900 font-semibold' : ''}`}
           >
             Edit
           </button>
           {activeMenu === 'edit' && (
-            <div className="absolute left-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 text-xs animate-scaleIn">
+            <div className="absolute left-0 top-full mt-1 w-52 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 text-xs animate-scaleIn">
               <button
+                type="button"
                 onClick={() => { editor?.chain()?.focus()?.undo?.()?.run?.(); setActiveMenu(null); }}
                 disabled={!editor?.can?.()?.undo?.()}
-                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 flex items-center justify-between text-slate-700 disabled:opacity-40"
+                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 flex items-center justify-between text-slate-700 disabled:opacity-40 font-medium"
               >
                 <span>Undo</span>
-                <span className="text-[10px] text-slate-400">Ctrl+Z</span>
+                <span className="text-[10px] text-slate-400 font-mono">Ctrl+Z</span>
               </button>
               <button
+                type="button"
                 onClick={() => { editor?.chain()?.focus()?.redo?.()?.run?.(); setActiveMenu(null); }}
                 disabled={!editor?.can?.()?.redo?.()}
-                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 flex items-center justify-between text-slate-700 disabled:opacity-40"
+                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 flex items-center justify-between text-slate-700 disabled:opacity-40 font-medium"
               >
                 <span>Redo</span>
-                <span className="text-[10px] text-slate-400">Ctrl+Y</span>
+                <span className="text-[10px] text-slate-400 font-mono">Ctrl+Y</span>
               </button>
               <div className="my-1 border-t border-slate-100" />
               <button
+                type="button"
                 onClick={() => { editor.chain().focus().selectAll().run(); setActiveMenu(null); }}
-                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 flex items-center justify-between text-slate-700"
+                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 flex items-center justify-between text-slate-700 font-medium"
               >
                 <span>Select All</span>
-                <span className="text-[10px] text-slate-400">Ctrl+A</span>
+                <span className="text-[10px] text-slate-400 font-mono">Ctrl+A</span>
               </button>
               <button
+                type="button"
+                onClick={() => { editor.chain().focus().unsetAllMarks().clearNodes().run(); setActiveMenu(null); }}
+                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700 font-medium"
+              >
+                <span>Clear Formatting</span>
+              </button>
+              <div className="my-1 border-t border-slate-100" />
+              <button
+                type="button"
                 onClick={() => { if (confirm('Clear all document content?')) editor.chain().focus().clearContent().run(); setActiveMenu(null); }}
-                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-red-600 font-medium"
+                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-red-600 font-semibold"
               >
                 <span>Clear Content</span>
               </button>
@@ -169,22 +194,31 @@ export const EditorToolbar = ({ editor, disabled = false, onExportMarkdown, onIm
         {/* View Menu */}
         <div className="relative">
           <button
+            type="button"
             onClick={() => toggleMenu('view')}
             className={`px-2 py-0.5 rounded hover:bg-slate-100 transition ${activeMenu === 'view' ? 'bg-slate-100 text-slate-900 font-semibold' : ''}`}
           >
             View
           </button>
           {activeMenu === 'view' && (
-            <div className="absolute left-0 top-full mt-1 w-44 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 text-xs animate-scaleIn">
+            <div className="absolute left-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 text-xs animate-scaleIn">
               <button
+                type="button"
                 onClick={() => {
-                  if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-                  else document.exitFullscreen();
+                  if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+                  else document.exitFullscreen?.();
                   setActiveMenu(null);
                 }}
-                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700"
+                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700 font-medium"
               >
                 <span>Toggle Fullscreen</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowWordCount(true); setActiveMenu(null); }}
+                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700 font-medium"
+              >
+                <span>Show Word Count</span>
               </button>
             </div>
           )}
@@ -193,35 +227,56 @@ export const EditorToolbar = ({ editor, disabled = false, onExportMarkdown, onIm
         {/* Insert Menu */}
         <div className="relative">
           <button
+            type="button"
             onClick={() => toggleMenu('insert')}
             className={`px-2 py-0.5 rounded hover:bg-slate-100 transition ${activeMenu === 'insert' ? 'bg-slate-100 text-slate-900 font-semibold' : ''}`}
           >
             Insert
           </button>
           {activeMenu === 'insert' && (
-            <div className="absolute left-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 text-xs animate-scaleIn">
+            <div className="absolute left-0 top-full mt-1 w-52 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 text-xs animate-scaleIn">
               <button
+                type="button"
                 onClick={() => { setLink(); setActiveMenu(null); }}
-                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700"
+                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700 font-medium flex items-center justify-between"
               >
-                <span>Link...</span>
+                <span>Insert Link...</span>
+                <LinkIcon className="w-3.5 h-3.5 text-slate-400" />
               </button>
               <button
+                type="button"
                 onClick={() => { editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); setActiveMenu(null); }}
-                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700 flex items-center justify-between"
+                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700 font-medium flex items-center justify-between"
               >
-                <span>Table (3x3)</span>
+                <span>Insert Table (3x3)</span>
                 <Table className="w-3.5 h-3.5 text-slate-400" />
               </button>
+              <div className="my-1 border-t border-slate-100" />
               <button
+                type="button"
+                onClick={() => { editor.chain().focus().toggleBulletList().run(); setActiveMenu(null); }}
+                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700 font-medium"
+              >
+                <span>Bullet List</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { editor.chain().focus().toggleOrderedList().run(); setActiveMenu(null); }}
+                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700 font-medium"
+              >
+                <span>Numbered List</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => { editor.chain().focus().toggleBlockquote().run(); setActiveMenu(null); }}
-                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700"
+                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700 font-medium"
               >
                 <span>Blockquote</span>
               </button>
               <button
+                type="button"
                 onClick={() => { editor.chain().focus().setHorizontalRule().run(); setActiveMenu(null); }}
-                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700"
+                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700 font-medium"
               >
                 <span>Horizontal Line</span>
               </button>
@@ -232,34 +287,70 @@ export const EditorToolbar = ({ editor, disabled = false, onExportMarkdown, onIm
         {/* Table Menu */}
         <div className="relative">
           <button
+            type="button"
             onClick={() => toggleMenu('table')}
             className={`px-2 py-0.5 rounded hover:bg-slate-100 transition ${activeMenu === 'table' ? 'bg-slate-100 text-slate-900 font-semibold' : ''}`}
           >
             Table
           </button>
           {activeMenu === 'table' && (
-            <div className="absolute left-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 text-xs animate-scaleIn">
+            <div className="absolute left-0 top-full mt-1 w-52 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 text-xs animate-scaleIn">
               <button
+                type="button"
                 onClick={() => { editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); setActiveMenu(null); }}
-                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700"
+                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700 font-medium"
               >
-                <span>Insert Table</span>
+                <span>Insert New Table</span>
+              </button>
+              <div className="my-1 border-t border-slate-100" />
+              <button
+                type="button"
+                onClick={() => { editor.chain().focus().addColumnBefore().run(); setActiveMenu(null); }}
+                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700 font-medium"
+              >
+                <span>Add Column Before</span>
               </button>
               <button
+                type="button"
                 onClick={() => { editor.chain().focus().addColumnAfter().run(); setActiveMenu(null); }}
-                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700"
+                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700 font-medium"
               >
                 <span>Add Column After</span>
               </button>
               <button
+                type="button"
+                onClick={() => { editor.chain().focus().deleteColumn().run(); setActiveMenu(null); }}
+                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700 font-medium"
+              >
+                <span>Delete Column</span>
+              </button>
+              <div className="my-1 border-t border-slate-100" />
+              <button
+                type="button"
+                onClick={() => { editor.chain().focus().addRowBefore().run(); setActiveMenu(null); }}
+                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700 font-medium"
+              >
+                <span>Add Row Before</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => { editor.chain().focus().addRowAfter().run(); setActiveMenu(null); }}
-                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700"
+                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700 font-medium"
               >
                 <span>Add Row After</span>
               </button>
               <button
+                type="button"
+                onClick={() => { editor.chain().focus().deleteRow().run(); setActiveMenu(null); }}
+                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700 font-medium"
+              >
+                <span>Delete Row</span>
+              </button>
+              <div className="my-1 border-t border-slate-100" />
+              <button
+                type="button"
                 onClick={() => { editor.chain().focus().deleteTable().run(); setActiveMenu(null); }}
-                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-red-600 font-medium border-t border-slate-100"
+                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-red-600 font-semibold"
               >
                 <span>Delete Table</span>
               </button>
@@ -267,21 +358,30 @@ export const EditorToolbar = ({ editor, disabled = false, onExportMarkdown, onIm
           )}
         </div>
 
-
         {/* Format Menu */}
         <div className="relative">
           <button
+            type="button"
             onClick={() => toggleMenu('format')}
             className={`px-2 py-0.5 rounded hover:bg-slate-100 transition ${activeMenu === 'format' ? 'bg-slate-100 text-slate-900 font-semibold' : ''}`}
           >
             Format
           </button>
           {activeMenu === 'format' && (
-            <div className="absolute left-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 text-xs animate-scaleIn">
-              <button onClick={() => { editor.chain().focus().toggleBold().run(); setActiveMenu(null); }} className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 font-bold text-slate-800">Bold</button>
-              <button onClick={() => { editor.chain().focus().toggleItalic().run(); setActiveMenu(null); }} className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 italic text-slate-800">Italic</button>
-              <button onClick={() => { editor.chain().focus().toggleUnderline().run(); setActiveMenu(null); }} className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 underline text-slate-800">Underline</button>
-              <button onClick={() => { editor.chain().focus().toggleStrike().run(); setActiveMenu(null); }} className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 line-through text-slate-800">Strikethrough</button>
+            <div className="absolute left-0 top-full mt-1 w-52 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 text-xs animate-scaleIn">
+              <button type="button" onClick={() => { editor.chain().focus().toggleBold().run(); setActiveMenu(null); }} className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 font-bold text-slate-800">Bold (Ctrl+B)</button>
+              <button type="button" onClick={() => { editor.chain().focus().toggleItalic().run(); setActiveMenu(null); }} className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 italic text-slate-800">Italic (Ctrl+I)</button>
+              <button type="button" onClick={() => { editor.chain().focus().toggleUnderline().run(); setActiveMenu(null); }} className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 underline text-slate-800">Underline (Ctrl+U)</button>
+              <button type="button" onClick={() => { editor.chain().focus().toggleStrike().run(); setActiveMenu(null); }} className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 line-through text-slate-800">Strikethrough</button>
+              <div className="my-1 border-t border-slate-100" />
+              <button type="button" onClick={() => { editor.chain().focus().setParagraph().run(); setActiveMenu(null); }} className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700 font-medium">Normal Text</button>
+              <button type="button" onClick={() => { editor.chain().focus().toggleHeading({ level: 1 }).run(); setActiveMenu(null); }} className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-800 font-bold text-sm">Heading 1</button>
+              <button type="button" onClick={() => { editor.chain().focus().toggleHeading({ level: 2 }).run(); setActiveMenu(null); }} className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-800 font-bold text-xs">Heading 2</button>
+              <button type="button" onClick={() => { editor.chain().focus().toggleHeading({ level: 3 }).run(); setActiveMenu(null); }} className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-800 font-bold text-xs">Heading 3</button>
+              <div className="my-1 border-t border-slate-100" />
+              <button type="button" onClick={() => { editor.chain().focus().setTextAlign('left').run(); setActiveMenu(null); }} className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700 font-medium">Align Left</button>
+              <button type="button" onClick={() => { editor.chain().focus().setTextAlign('center').run(); setActiveMenu(null); }} className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700 font-medium">Align Center</button>
+              <button type="button" onClick={() => { editor.chain().focus().setTextAlign('right').run(); setActiveMenu(null); }} className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700 font-medium">Align Right</button>
             </div>
           )}
         </div>
@@ -289,6 +389,7 @@ export const EditorToolbar = ({ editor, disabled = false, onExportMarkdown, onIm
         {/* Tools Menu */}
         <div className="relative">
           <button
+            type="button"
             onClick={() => toggleMenu('tools')}
             className={`px-2 py-0.5 rounded hover:bg-slate-100 transition ${activeMenu === 'tools' ? 'bg-slate-100 text-slate-900 font-semibold' : ''}`}
           >
@@ -297,16 +398,25 @@ export const EditorToolbar = ({ editor, disabled = false, onExportMarkdown, onIm
           {activeMenu === 'tools' && (
             <div className="absolute left-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 text-xs animate-scaleIn">
               <button
+                type="button"
                 onClick={() => { setShowWordCount(true); setActiveMenu(null); }}
-                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700"
+                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700 font-medium"
               >
                 <span>Word count</span>
               </button>
               <button
+                type="button"
                 onClick={() => { setShowShortcuts(true); setActiveMenu(null); }}
-                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700"
+                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700 font-medium"
               >
                 <span>Keyboard shortcuts</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { editor.chain().focus().unsetAllMarks().clearNodes().run(); setActiveMenu(null); }}
+                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700 font-medium"
+              >
+                <span>Clear formatting</span>
               </button>
             </div>
           )}
@@ -315,6 +425,7 @@ export const EditorToolbar = ({ editor, disabled = false, onExportMarkdown, onIm
         {/* Help Menu */}
         <div className="relative">
           <button
+            type="button"
             onClick={() => toggleMenu('help')}
             className={`px-2 py-0.5 rounded hover:bg-slate-100 transition ${activeMenu === 'help' ? 'bg-slate-100 text-slate-900 font-semibold' : ''}`}
           >
@@ -323,8 +434,9 @@ export const EditorToolbar = ({ editor, disabled = false, onExportMarkdown, onIm
           {activeMenu === 'help' && (
             <div className="absolute left-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 text-xs animate-scaleIn">
               <button
+                type="button"
                 onClick={() => { setShowHelp(true); setActiveMenu(null); }}
-                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700"
+                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 text-slate-700 font-medium"
               >
                 <span>SyncWrite Editor Guide</span>
               </button>
@@ -401,8 +513,8 @@ export const EditorToolbar = ({ editor, disabled = false, onExportMarkdown, onIm
 
 
       {/* Primary Formatting Toolbar */}
-      <div className={`flex flex-wrap items-center justify-between gap-1 px-4 py-1.5 bg-slate-50/70 transition ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
-        <div className="flex flex-wrap items-center gap-0.5">
+      <div className={`flex items-center justify-between gap-1 px-2 sm:px-4 py-1.5 bg-slate-50/70 overflow-x-auto no-scrollbar transition ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
+        <div className="flex items-center gap-0.5 min-w-max">
           {/* Undo / Redo */}
           <button
             type="button"

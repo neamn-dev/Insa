@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   FileText, LayoutDashboard, FolderOpen, Users, Clock, Star,
-  Plus, Shield, LogOut
+  Plus, Shield, LogOut, X
 } from 'lucide-react';
 
 const mainNavItems = [
@@ -15,7 +15,7 @@ const mainNavItems = [
   { id: 'starred', label: 'Starred', icon: Star },
 ];
 
-export const Sidebar = ({ activeTab = 'dashboard', onTabChange, onNewDocument, documents = [] }) => {
+export const Sidebar = ({ activeTab = 'dashboard', onTabChange, onNewDocument, documents = [], isOpen = false, onClose }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -33,21 +33,40 @@ export const Sidebar = ({ activeTab = 'dashboard', onTabChange, onNewDocument, d
       if (item.id === 'dashboard') onTabChange('my');
       else onTabChange(item.id);
     }
+    if (onClose) onClose();
   };
 
   const myDocs = Array.isArray(documents) ? documents : [];
 
   return (
-    <aside className="w-[260px] bg-slate-900 text-white min-h-screen flex flex-col fixed left-0 top-0 bottom-0 z-40 shadow-xl border-r border-slate-800">
-      {/* Logo */}
-      <div className="p-5 pb-3">
-        <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
-          <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white shadow-md">
-            <FileText className="w-5 h-5" />
+    <>
+      {/* Mobile Backdrop */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-40 lg:hidden"
+          onClick={onClose}
+        />
+      )}
+
+      <aside className={`w-[260px] bg-slate-900 text-white h-screen flex flex-col fixed left-0 top-0 bottom-0 z-50 shadow-xl border-r border-slate-800 transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+        {/* Logo & Close Button */}
+        <div className="p-5 pb-3 flex items-center justify-between">
+          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => { navigate('/dashboard'); if (onClose) onClose(); }}>
+            <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white shadow-md">
+              <FileText className="w-5 h-5" />
+            </div>
+            <span className="text-xl font-bold font-heading text-white tracking-tight">SyncWrite</span>
           </div>
-          <span className="text-xl font-bold font-heading text-white tracking-tight">SyncWrite</span>
+
+          {/* Close button for mobile */}
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 lg:hidden"
+            title="Close Menu"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
-      </div>
       {/* Navigation Links */}
       <div className="flex-1 overflow-y-auto px-3 py-2 space-y-6">
         <nav className="space-y-0.5">
@@ -146,7 +165,8 @@ export const Sidebar = ({ activeTab = 'dashboard', onTabChange, onNewDocument, d
         </div>
       </div>
     </aside>
-  );
+  </>
+);
 };
 
 

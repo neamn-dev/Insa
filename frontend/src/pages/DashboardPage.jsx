@@ -4,9 +4,10 @@ import api from '../services/api';
 import { Sidebar } from '../components/Sidebar';
 import {
   FileText, Plus, Search, Users, Clock, FolderOpen, Star,
-  Copy, Edit2, Trash2, Bell, Settings, MoreHorizontal, ArrowRight
+  Copy, Edit2, Trash2, Bell, Settings, MoreHorizontal, ArrowRight, Menu
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { getSocket } from '../services/socket';
 
 const getGreeting = () => {
   const hour = new Date().getHours();
@@ -32,7 +33,7 @@ const getRelativeTime = (dateString) => {
 };
 
 export const DashboardPage = () => {
-  const { user } = useAuth();
+  const { user, accessToken } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('my');
   const [documents, setDocuments] = useState({ my_documents: [], shared_with_me: [], recent_documents: [] });
@@ -42,6 +43,7 @@ export const DashboardPage = () => {
   const [newTitle, setNewTitle] = useState('');
   const [editingDocId, setEditingDocId] = useState(null);
   const [editTitle, setEditTitle] = useState('');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const fetchDocuments = async () => {
     try {
@@ -56,7 +58,17 @@ export const DashboardPage = () => {
 
   useEffect(() => {
     fetchDocuments();
-  }, []);
+
+    const socket = getSocket(accessToken);
+    const handleShareUpdated = () => {
+      fetchDocuments();
+    };
+
+    socket.on('document:share_updated', handleShareUpdated);
+    return () => {
+      socket.off('document:share_updated', handleShareUpdated);
+    };
+  }, [accessToken]);
 
   const handleCreateDocument = async (e) => {
     e.preventDefault();
@@ -175,24 +187,36 @@ export const DashboardPage = () => {
         onTabChange={setActiveTab}
         onNewDocument={() => setShowCreateModal(true)}
         documents={documents.my_documents}
+        isOpen={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
       />
 
       {/* Main Content */}
-      <main className="flex-1 ml-[260px] min-h-screen">
+      <main className="flex-1 ml-0 lg:ml-[260px] min-h-screen transition-all duration-300">
         {/* Top Bar */}
-        <header className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between sticky top-0 z-30">
-          <div className="relative w-80">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search documents..."
-              className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-slate-50"
-            />
+        <header className="bg-white border-b border-slate-200 px-4 sm:px-8 py-3 flex items-center justify-between sticky top-0 z-30">
+          <div className="flex items-center space-x-3 flex-1 max-w-md">
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg lg:hidden transition"
+              title="Open Navigation Menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search documents..."
+                className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-slate-50"
+              />
+            </div>
           </div>
 
-          <div className="flex items-center space-x-3 relative">
+          <div className="flex items-center space-x-3 relative ml-3">
             <div
               onClick={() => setShowSettingsModal(!showSettingsModal)}
               className="w-9 h-9 rounded-full bg-brand-500 text-white flex items-center justify-center text-sm font-bold uppercase ring-2 ring-brand-200 cursor-pointer hover:opacity-90 transition shadow-sm"
@@ -203,19 +227,19 @@ export const DashboardPage = () => {
           </div>
         </header>
 
-        <div className="px-8 py-6">
+        <div className="px-4 sm:px-8 py-4 sm:py-6">
           {/* Greeting & Quick Action */}
-          <div className="mb-8 animate-fadeIn flex items-center justify-between">
+          <div className="mb-6 sm:mb-8 animate-fadeIn flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold font-heading text-slate-900">
+              <h1 className="text-xl sm:text-2xl font-bold font-heading text-slate-900">
                 {getGreeting()}, {user?.name?.split(' ')[0] || 'there'}! 👋
               </h1>
-              <p className="text-sm text-slate-500 mt-1">Here's what's happening with your documents.</p>
+              <p className="text-xs sm:text-sm text-slate-500 mt-1">Here's what's happening with your documents.</p>
             </div>
 
             <button
               onClick={() => setShowCreateModal(true)}
-              className="flex items-center space-x-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-xl shadow-md shadow-brand-600/25 transition active:scale-95 flex-shrink-0"
+              className="flex items-center justify-center space-x-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-xl shadow-md shadow-brand-600/25 transition active:scale-95 flex-shrink-0"
             >
               <Plus className="w-5 h-5" />
               <span>New Document</span>
@@ -223,7 +247,7 @@ export const DashboardPage = () => {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6 sm:mb-8">
             {stats.map((stat, i) => (
               <div
                 key={i}
@@ -232,12 +256,12 @@ export const DashboardPage = () => {
                 style={{ animationDelay: `${i * 80}ms` }}
               >
                 <div className="flex items-center justify-between">
-                  <div className={`w-10 h-10 rounded-xl ${stat.color} flex items-center justify-center`}>
-                    <stat.icon className="w-5 h-5" />
+                  <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl ${stat.color} flex items-center justify-center`}>
+                    <stat.icon className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                 </div>
-                <div className="stat-value">{stat.value}</div>
-                <div className="stat-label">{stat.label}</div>
+                <div className="stat-value text-xl sm:text-2xl">{stat.value}</div>
+                <div className="stat-label text-[11px] sm:text-xs">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -247,7 +271,15 @@ export const DashboardPage = () => {
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden animate-fadeIn" style={{ animationDelay: '300ms' }}>
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <h2 className="text-lg font-bold font-heading text-slate-900">
-                {activeTab === 'shared' ? 'Shared Documents' : activeTab === 'recent' ? 'Recent Documents' : 'Recent Documents'}
+                {activeTab === 'all'
+                  ? 'All Documents'
+                  : activeTab === 'my' || activeTab === 'dashboard'
+                  ? 'My Documents'
+                  : activeTab === 'shared'
+                  ? 'Shared Documents'
+                  : activeTab === 'starred'
+                  ? 'Starred Documents'
+                  : 'Recently Opened'}
               </h2>
               <button
                 onClick={() => setActiveTab('recent')}
@@ -331,7 +363,7 @@ export const DashboardPage = () => {
                         </td>
 
                         <td className="px-6 py-3.5">
-                          <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center space-x-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition" onClick={(e) => e.stopPropagation()}>
                             <button
                               onClick={(e) => handleToggleStar(doc.id, e)}
                               className={`p-1.5 rounded-lg transition ${doc.is_starred ? 'text-amber-500 hover:bg-amber-50' : 'text-slate-400 hover:text-amber-500 hover:bg-slate-100'}`}

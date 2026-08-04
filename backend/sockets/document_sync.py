@@ -32,6 +32,7 @@ def handle_document_join(data):
 
     room = f"document:{document_id}"
     join_room(room)
+    join_room(f"user:{user_id}")
 
     role = get_user_document_role(user_id, document_id)
     user_info['role'] = role
@@ -66,6 +67,49 @@ def handle_document_join(data):
         'document_id': document_id,
         'active_users': active_users
     }, to=room)
+
+def notify_share_updated(document_id, target_user_id, role, target_email=None):
+    """
+    Helper function to broadcast share updates in real-time to active collaborators.
+    """
+    str_target_id = str(target_user_id) if target_user_id else None
+    
+    # Update socket_users cache if user is currently connected
+    for sid, uinfo in list(socket_users.items()):
+        if str(uinfo.get('user_id')) == str_target_id and uinfo.get('document_id') == document_id:
+            uinfo['role'] = role
+
+    room = f"document:{document_id}"
+    user_room = f"user:{str_target_id}"
+
+    payload = {
+        'document_id': document_id,
+        'user_id': str_target_id,
+        'user_email': target_email,
+        'role': role
+    }
+
+    socketio.emit('document:share_updated', payload, to=room)
+    if str_target_id:
+        socketio.emit('document:share_updated', payload, to=user_room)
+
+    # Broadcast updated presence
+    active_users = []
+    for sid in room_members.get(document_id, []):
+        if sid in socket_users:
+            u = socket_users[sid]
+            active_users.append({
+                'user_id': u['user_id'],
+                'name': u['name'],
+                'email': u['email'],
+                'role': u.get('role', 'VIEWER')
+            })
+
+    socketio.emit('presence:update', {
+        'document_id': document_id,
+        'active_users': active_users
+    }, to=room)
+
 
 @socketio.on('document:update')
 def handle_document_update(data):

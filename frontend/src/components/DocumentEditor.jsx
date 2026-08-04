@@ -114,6 +114,7 @@ export const DocumentEditor = ({
       if (currentContent !== initialStateData) {
         isRemoteUpdateRef.current = true;
         editor.commands.setContent(initialStateData, false);
+        isRemoteUpdateRef.current = false;
       }
     }
   }, [editor, initialStateData]);
@@ -143,6 +144,7 @@ export const DocumentEditor = ({
         if (editor.getHTML() !== targetContent) {
           isRemoteUpdateRef.current = true;
           editor.commands.setContent(targetContent || '', false);
+          isRemoteUpdateRef.current = false;
         }
       }
       onSaveStatusChange('saved');
@@ -166,6 +168,7 @@ export const DocumentEditor = ({
         isRemoteUpdateRef.current = true;
         const { from, to } = editor.state.selection;
         editor.commands.setContent(incomingContent, false);
+        isRemoteUpdateRef.current = false;
         try {
           const docLength = editor.state.doc.content.size;
           if (from <= docLength && to <= docLength) {
@@ -285,7 +288,7 @@ export const DocumentEditor = ({
         onImportMarkdown={handleImportMarkdown}
       />
       <div
-        className="flex-1 overflow-y-auto p-4 sm:p-8 flex justify-center bg-slate-100/50 dark:bg-slate-950 cursor-text"
+        className="flex-1 overflow-y-auto p-2 sm:p-6 lg:p-8 flex justify-center bg-slate-100/50 dark:bg-slate-950 cursor-text"
         onClick={() => editor && editor.focus()}
       >
         <div className="w-full max-w-4xl bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm min-h-[600px] flex flex-col">

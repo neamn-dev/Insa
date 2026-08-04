@@ -97,7 +97,12 @@ export const CommentsPanel = ({ documentId, userRole, onClose }) => {
   const filteredComments = comments.filter(c => activeTab === 'resolved' ? c.resolved : !c.resolved);
 
   return (
-    <aside className="w-80 bg-white border-l border-slate-200 h-full flex flex-col shadow-xl z-30 animate-slideInLeft">
+    <>
+      <div
+        className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-30 lg:hidden"
+        onClick={onClose}
+      />
+      <aside className="w-full sm:w-80 bg-white border-l border-slate-200 h-full flex flex-col shadow-2xl z-40 animate-slideInLeft fixed lg:relative inset-y-0 right-0">
       {/* Header */}
       <div className="p-4 border-b border-slate-100 flex items-center justify-between">
         <h3 className="font-bold font-heading text-slate-900 text-base">Comments</h3>
@@ -265,6 +270,7 @@ export const CommentsPanel = ({ documentId, userRole, onClose }) => {
           </button>
         </div>
       )}
-    </aside>
+      </aside>
+    </>
   );
 };

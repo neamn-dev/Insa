@@ -54,6 +54,15 @@ def update_document(id):
     if error:
         return jsonify({"status": "fail", "message": error}), 400
 
+    try:
+        from extensions import socketio
+        socketio.emit('document:title_updated', {
+            'document_id': id,
+            'title': title
+        }, to=f"document:{id}")
+    except Exception as e:
+        print("[Title Socket Warning]", e)
+
     return jsonify({
         "status": "success",
         "message": "Document title updated successfully.",

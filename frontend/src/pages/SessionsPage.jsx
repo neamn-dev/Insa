@@ -50,14 +50,14 @@ export const SessionsPage = () => {
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <Navbar />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
         <div>
-          <h1 className="text-3xl font-bold font-heading text-slate-900">Session Management & Audit Log</h1>
-          <p className="text-slate-500 text-sm mt-1">Monitor active sessions, security alerts, and login history</p>
+          <h1 className="text-2xl sm:text-3xl font-bold font-heading text-slate-900">Session Management & Audit Log</h1>
+          <p className="text-slate-500 text-xs sm:text-sm mt-1">Monitor active sessions, security alerts, and login history</p>
         </div>
 
         {/* Active Sessions */}
-        <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+        <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 p-4 sm:p-6 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div className="flex items-center space-x-2">
               <Shield className="w-5 h-5 text-blue-600" />
@@ -123,7 +123,7 @@ export const SessionsPage = () => {
         </div>
 
         {/* Login Audit History */}
-        <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+        <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 p-4 sm:p-6 shadow-sm">
           <div className="flex items-center space-x-2 mb-6">
             <ShieldAlert className="w-5 h-5 text-blue-600" />
             <h2 className="text-xl font-bold font-heading text-slate-900">Login Activity Audit Log</h2>

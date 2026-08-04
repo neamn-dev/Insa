@@ -9,9 +9,10 @@ import { VersionHistoryPanel } from '../components/VersionHistoryPanel';
 import { ShareModal } from '../components/ShareModal';
 import {
   ArrowLeft, Share2, History, MessageSquare, Edit2, ShieldAlert,
-  FileText, MoreHorizontal, Users, UserPlus, Clock, Eye, RotateCcw
+  FileText, MoreHorizontal, Users, UserPlus, Clock, Eye, RotateCcw, Plus
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { getSocket } from '../services/socket';
 
 class DocumentErrorBoundary extends Component {
   constructor(props) {
@@ -55,7 +56,7 @@ const AVATAR_COLORS = [
 const DocumentEditorPageInner = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, accessToken } = useAuth();
 
   const [documentData, setDocumentData] = useState(null);
   const [userRole, setUserRole] = useState(null);
@@ -76,9 +77,8 @@ const DocumentEditorPageInner = () => {
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState('');
 
-
-  const fetchDocument = async () => {
-    setLoading(true);
+  const fetchDocument = async (showSpinner = true) => {
+    if (showSpinner) setLoading(true);
     setError(null);
     try {
       const res = await api.get(`/api/documents/${id}`);
@@ -103,14 +103,40 @@ const DocumentEditorPageInner = () => {
         setError(err.response?.data?.message || err.message || 'Failed to load document.');
       }
     } finally {
-      setLoading(false);
+      if (showSpinner) setLoading(false);
     }
   };
 
 
   useEffect(() => {
-    fetchDocument();
+    fetchDocument(true);
   }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    const socket = getSocket(accessToken);
+
+    const handleShareUpdated = (data) => {
+      if (data && data.document_id === id) {
+        fetchDocument(false);
+      }
+    };
+
+    const handleTitleUpdated = (data) => {
+      if (data && data.document_id === id && data.title) {
+        setDocumentData((prev) => prev ? { ...prev, title: data.title } : prev);
+        setTitleInput(data.title);
+      }
+    };
+
+    socket.on('document:share_updated', handleShareUpdated);
+    socket.on('document:title_updated', handleTitleUpdated);
+
+    return () => {
+      socket.off('document:share_updated', handleShareUpdated);
+      socket.off('document:title_updated', handleTitleUpdated);
+    };
+  }, [id, accessToken]);
 
   const handleTitleSubmit = async (e) => {
     e.preventDefault();
@@ -235,9 +261,11 @@ const DocumentEditorPageInner = () => {
 
 
         {/* Actions */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1.5 sm:space-x-2">
           {/* Presence Avatars */}
-          <PresenceList activeUsers={activeUsers} typingUsers={typingUsers} />
+          <div className="hidden sm:block">
+            <PresenceList activeUsers={activeUsers} typingUsers={typingUsers} />
+          </div>
 
           <button
             onClick={async () => {
@@ -248,37 +276,45 @@ const DocumentEditorPageInner = () => {
                 alert(err.response?.data?.message || 'Failed to create document');
               }
             }}
-            className="flex items-center space-x-1.5 px-3 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 font-semibold text-xs rounded-lg transition border border-brand-200"
+            className="flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 font-semibold text-xs rounded-lg transition border border-brand-200"
             title="Create Blank Document"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>New Document</span>
+            <span className="hidden md:inline">New Document</span>
           </button>
 
           {userRole === 'OWNER' && (
             <button
               onClick={() => setShowShareModal(true)}
-              className="flex items-center space-x-1.5 px-4 py-1.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-lg shadow-md shadow-brand-600/25 transition"
+              className="flex items-center space-x-1.5 px-3 sm:px-4 py-1.5 bg-brand-600 hover:bg-brand-700 text-white text-xs sm:text-sm font-semibold rounded-lg shadow-md shadow-brand-600/25 transition"
             >
-              <Share2 className="w-4 h-4" />
-              <span>Share</span>
+              <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Share</span>
             </button>
           )}
 
           <button
-            onClick={() => { setShowCommentsPanel(!showCommentsPanel); setShowVersionPanel(false); }}
-            className={`p-2 rounded-lg border transition ${showCommentsPanel ? 'bg-brand-50 border-brand-300 text-brand-600' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+            onClick={() => { setShowCommentsPanel(!showCommentsPanel); setShowVersionPanel(false); setShowPeopleSidebar(false); }}
+            className={`p-1.5 sm:p-2 rounded-lg border transition ${showCommentsPanel ? 'bg-brand-50 border-brand-300 text-brand-600' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
             title="Comments"
           >
             <MessageSquare className="w-4 h-4" />
           </button>
 
           <button
-            onClick={() => { setShowVersionPanel(!showVersionPanel); setShowCommentsPanel(false); }}
-            className={`p-2 rounded-lg border transition ${showVersionPanel ? 'bg-brand-50 border-brand-300 text-brand-600' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+            onClick={() => { setShowVersionPanel(!showVersionPanel); setShowCommentsPanel(false); setShowPeopleSidebar(false); }}
+            className={`p-1.5 sm:p-2 rounded-lg border transition ${showVersionPanel ? 'bg-brand-50 border-brand-300 text-brand-600' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
             title="Version History"
           >
             <History className="w-4 h-4" />
+          </button>
+
+          <button
+            onClick={() => { setShowPeopleSidebar(!showPeopleSidebar); setShowCommentsPanel(false); setShowVersionPanel(false); }}
+            className={`p-1.5 sm:p-2 rounded-lg border transition lg:hidden ${showPeopleSidebar ? 'bg-brand-50 border-brand-300 text-brand-600' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+            title="Document & Collaborators Info"
+          >
+            <Users className="w-4 h-4" />
           </button>
 
           <div className="relative">
@@ -424,7 +460,14 @@ const DocumentEditorPageInner = () => {
             onClose={() => setShowVersionPanel(false)}
           />
         ) : (
-          <aside className="w-80 bg-white border-l border-slate-200 flex flex-col h-full overflow-hidden shadow-sm">
+          <>
+            {showPeopleSidebar && (
+              <div
+                className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-30 lg:hidden"
+                onClick={() => setShowPeopleSidebar(false)}
+              />
+            )}
+            <aside className={`w-full sm:w-80 bg-white border-l border-slate-200 flex-col h-full overflow-hidden shadow-2xl lg:shadow-sm ${showPeopleSidebar ? 'fixed inset-y-0 right-0 flex z-40 animate-slideInLeft' : 'hidden lg:flex'}`}>
             {/* Top Section — Collaborators */}
             <div className="p-4 border-b border-slate-200 bg-slate-50/50">
               <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">
@@ -515,6 +558,7 @@ const DocumentEditorPageInner = () => {
               </div>
             </div>
           </aside>
+        </>
         )}
       </div>
 

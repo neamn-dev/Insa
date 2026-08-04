@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { signInWithGoogle } from '../services/firebase';
-import { AlertCircle, CheckCircle2, Eye, EyeOff, FileText } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Eye, EyeOff, FileText, X } from 'lucide-react';
 
 export const RegisterPage = () => {
   const [name, setName] = useState('');
@@ -17,6 +17,10 @@ export const RegisterPage = () => {
   const [loading, setLoading] = useState(false);
   const { register, loginWithFirebaseToken } = useAuth();
   const navigate = useNavigate();
+
+  const clearErrors = () => {
+    if (error) setError('');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -50,29 +54,17 @@ export const RegisterPage = () => {
     try {
       const res = await signInWithGoogle();
       if (!res.success) {
-        if (res.unauthorizedDomain || (res.error && !res.error.includes('popup-closed-by-user'))) {
-          window.location.href = '/api/auth/google/redirect?mode=direct';
-          return;
-        }
-        if (res.error && res.error.includes('popup-closed-by-user')) {
-          setError('Sign-up popup was closed before completing registration.');
-        } else {
-          setError(res.error || 'Google sign-up popup failed.');
-        }
-        setLoading(false);
+        window.location.href = '/api/auth/google/redirect';
         return;
       }
       await loginWithFirebaseToken(res.idToken);
       navigate('/dashboard');
     } catch (err) {
-      window.location.href = '/api/auth/google/redirect?mode=direct';
+      window.location.href = '/api/auth/google/redirect';
     } finally {
       setLoading(false);
     }
   };
-
-
-
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-blue-950 flex items-center justify-center p-4 relative overflow-hidden">
@@ -81,7 +73,7 @@ export const RegisterPage = () => {
       <div className="absolute bottom-0 left-1/4 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* White card */}
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-8 relative animate-fadeIn">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 sm:p-8 relative animate-fadeIn">
 
         {/* Logo */}
         <div className="flex flex-col items-center mb-7">
@@ -94,15 +86,25 @@ export const RegisterPage = () => {
 
         {/* Alerts */}
         {error && (
-          <div className="mb-5 p-3.5 bg-red-50 border border-red-200 rounded-xl flex items-start space-x-2.5 text-red-700 text-xs">
-            <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-            <p>{error}</p>
+          <div className="mb-5 p-3.5 bg-red-50 border border-red-200 rounded-xl flex items-start justify-between text-red-700 text-xs animate-fadeIn">
+            <div className="flex items-start space-x-2.5">
+              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+              <p className="font-medium">{error}</p>
+            </div>
+            <button onClick={() => setError('')} className="p-1 hover:bg-red-100 rounded-lg text-red-500 transition" title="Dismiss">
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
         )}
         {success && (
-          <div className="mb-5 p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start space-x-2.5 text-emerald-700 text-xs">
-            <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
-            <p>{success}</p>
+          <div className="mb-5 p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start space-x-2.5 text-emerald-700 text-xs animate-fadeIn">
+            <div className="flex items-start space-x-2.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+              <p className="font-medium">{success}</p>
+            </div>
+            <button onClick={() => setSuccess('')} className="p-1 hover:bg-emerald-100 rounded-lg text-emerald-500 transition" title="Dismiss">
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
         )}
 
@@ -114,10 +116,12 @@ export const RegisterPage = () => {
               id="register-name"
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => { setName(e.target.value); clearErrors(); }}
               placeholder="Enter your full name"
               required
-              className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition bg-white"
+              className={`w-full px-4 py-2.5 border rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition bg-white ${
+                error ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-slate-300 focus:ring-brand-500 focus:border-brand-500'
+              }`}
             />
           </div>
 
@@ -127,10 +131,12 @@ export const RegisterPage = () => {
               id="register-email"
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => { setEmail(e.target.value); clearErrors(); }}
               placeholder="Enter your email"
               required
-              className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition bg-white"
+              className={`w-full px-4 py-2.5 border rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition bg-white ${
+                error ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-slate-300 focus:ring-brand-500 focus:border-brand-500'
+              }`}
             />
           </div>
 
@@ -141,10 +147,12 @@ export const RegisterPage = () => {
                 id="register-password"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => { setPassword(e.target.value); clearErrors(); }}
                 placeholder="Create a password"
                 required
-                className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition bg-white pr-11"
+                className={`w-full px-4 py-2.5 border rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition bg-white pr-11 ${
+                  error ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-slate-300 focus:ring-brand-500 focus:border-brand-500'
+                }`}
               />
               <button
                 type="button"
@@ -163,10 +171,12 @@ export const RegisterPage = () => {
                 id="register-confirm-password"
                 type={showConfirmPassword ? 'text' : 'password'}
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(e) => { setConfirmPassword(e.target.value); clearErrors(); }}
                 placeholder="Confirm your password"
                 required
-                className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition bg-white pr-11"
+                className={`w-full px-4 py-2.5 border rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition bg-white pr-11 ${
+                  error ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-slate-300 focus:ring-brand-500 focus:border-brand-500'
+                }`}
               />
               <button
                 type="button"

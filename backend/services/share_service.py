@@ -46,6 +46,12 @@ def add_or_update_share(document_id, owner_id, target_email, role):
     db.session.add(activity)
 
     db.session.commit()
+    try:
+        from sockets.document_sync import notify_share_updated
+        notify_share_updated(document_id, target_user.id, role_upper, target_user.email)
+    except Exception as e:
+        print("[Share Socket Warning]", e)
+
     return share.to_dict(), None
 
 def remove_share(document_id, owner_id, target_user_id):
@@ -66,6 +72,12 @@ def remove_share(document_id, owner_id, target_user_id):
     db.session.add(activity)
 
     db.session.commit()
+    try:
+        from sockets.document_sync import notify_share_updated
+        notify_share_updated(document_id, target_user_id, None, None)
+    except Exception as e:
+        print("[Share Socket Warning]", e)
+
     return True, "Share removed successfully."
 
 def search_users_to_share(query_text, current_user_id):

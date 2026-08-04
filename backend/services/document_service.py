@@ -49,19 +49,18 @@ def get_user_documents(user_id):
     """
     Returns dict containing:
     - my_documents: documents owned by user_id
-    - shared_with_me: documents shared with user_id
+    - shared_with_me: documents owned by other users and shared with user_id
     - recent_documents: recently opened documents by user_id
     """
-    # 1. My Documents
+    # 1. My Documents (All documents owned by user)
     my_docs = Document.query.filter_by(owner_id=user_id).order_by(Document.updated_at.desc()).all()
     my_docs_list = [d.to_dict(user_id=user_id, user_role='OWNER') for d in my_docs]
 
-
-    # 2. Shared With Me
-    shares = DocumentShare.query.filter_by(user_id=user_id).all()
+    # 2. Shared With Me (Documents owned by OTHERS that were shared WITH me)
+    shares_with_me = DocumentShare.query.filter_by(user_id=user_id).all()
     shared_docs_list = []
-    for s in shares:
-        if s.document:
+    for s in shares_with_me:
+        if s.document and s.document.owner_id != user_id:
             shared_docs_list.append(s.document.to_dict(user_id=user_id, user_role=s.role))
 
     # 3. Recent Documents (from activities or last_opened_at)

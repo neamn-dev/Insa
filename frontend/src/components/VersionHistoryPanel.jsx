@@ -69,7 +69,12 @@ export const VersionHistoryPanel = ({ documentId, userRole, activePreviewVersion
   };
 
   return (
-    <aside className="w-96 bg-white border-l border-slate-200 h-full flex flex-col shadow-xl z-30 animate-slideInLeft">
+    <>
+      <div
+        className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-30 lg:hidden"
+        onClick={onClose}
+      />
+      <aside className="w-full sm:w-80 md:w-96 bg-white border-l border-slate-200 h-full flex flex-col shadow-2xl z-40 animate-slideInLeft fixed lg:relative inset-y-0 right-0">
       {/* Header */}
       <div className="p-4 border-b border-slate-100 flex items-center justify-between">
         <div className="flex items-center space-x-2">
@@ -161,5 +166,6 @@ export const VersionHistoryPanel = ({ documentId, userRole, activePreviewVersion
         </div>
       )}
     </aside>
-  );
+  </>
+);
 };

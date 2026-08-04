@@ -109,7 +109,7 @@ export const ShareModal = ({ documentId, onClose }) => {
               )}
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
               <select
                 value={selectedRole}
                 onChange={(e) => setSelectedRole(e.target.value)}
