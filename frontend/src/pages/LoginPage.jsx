@@ -64,13 +64,13 @@ export const LoginPage = () => {
     try {
       const res = await signInWithGoogle();
       if (!res.success) {
-        window.location.href = '/api/auth/google/redirect';
+        setError(res.error || 'Firebase Google sign-in failed.');
         return;
       }
       await loginWithFirebaseToken(res.idToken);
       navigate('/dashboard');
     } catch (err) {
-      window.location.href = '/api/auth/google/redirect';
+      setError(err.message || 'Firebase Google sign-in failed.');
     } finally {
       setLoading(false);
     }
