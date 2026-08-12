@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { signInWithGoogle } from '../services/firebase';
+import { signInWithGoogle, checkFirebaseRedirectResult } from '../services/firebase';
 import { AlertCircle, CheckCircle2, Eye, EyeOff, FileText, X } from 'lucide-react';
 
 export const RegisterPage = () => {
@@ -17,6 +17,26 @@ export const RegisterPage = () => {
   const [loading, setLoading] = useState(false);
   const { register, loginWithFirebaseToken } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleRedirectResult = async () => {
+      const redirectRes = await checkFirebaseRedirectResult();
+      if (redirectRes && redirectRes.success) {
+        setLoading(true);
+        try {
+          await loginWithFirebaseToken(redirectRes.idToken);
+          navigate('/dashboard');
+        } catch (err) {
+          setError(err.message || 'Firebase login failed.');
+        } finally {
+          setLoading(false);
+        }
+      } else if (redirectRes && !redirectRes.success) {
+        setError(redirectRes.error || 'Google redirect sign-in failed.');
+      }
+    };
+    handleRedirectResult();
+  }, []);
 
   const clearErrors = () => {
     if (error) setError('');
