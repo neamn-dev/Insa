@@ -15,8 +15,14 @@ export const RegisterPage = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-  const { register, loginWithFirebaseToken } = useAuth();
+  const { user, register, loginWithFirebaseToken } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     const handleRedirectResult = async () => {
@@ -74,13 +80,14 @@ export const RegisterPage = () => {
     try {
       const res = await signInWithGoogle();
       if (!res.success) {
-        setError(res.error || 'Firebase Google sign-in failed.');
+        if (res.useRedirect) return;
+        setError(res.error || 'Google sign-in failed. Please try again.');
         return;
       }
       await loginWithFirebaseToken(res.idToken);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.message || 'Firebase Google sign-in failed.');
+      setError(err.message || 'Google sign-in failed.');
     } finally {
       setLoading(false);
     }
@@ -182,6 +189,7 @@ export const RegisterPage = () => {
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
+            <p className="text-[11px] text-slate-500 mt-1">Must be at least 8 characters long with letters &amp; numbers (e.g. Password123)</p>
           </div>
 
           <div>

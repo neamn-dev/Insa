@@ -25,19 +25,23 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Check for cookie transfer from Google OAuth redirect
     const cookies = document.cookie.split('; ').reduce((acc, current) => {
-      const [name, value] = current.split('=');
-      acc[name] = value;
+      const parts = current.split('=');
+      if (parts.length >= 2) {
+        acc[parts[0].trim()] = parts.slice(1).join('=').trim();
+      }
       return acc;
     }, {});
 
-    if (cookies.access_token_transfer) {
-      sessionStorage.setItem('access_token', cookies.access_token_transfer);
-      setAccessToken(cookies.access_token_transfer);
+    const transferToken = cookies.access_token_transfer;
+    if (transferToken) {
+      sessionStorage.setItem('access_token', transferToken);
+      setAccessToken(transferToken);
       // clear cookie
       document.cookie = 'access_token_transfer=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     }
 
-    if (accessToken || sessionStorage.getItem('access_token')) {
+    const tokenToUse = transferToken || sessionStorage.getItem('access_token');
+    if (tokenToUse) {
       fetchCurrentUser();
     } else {
       setLoading(false);
@@ -46,6 +50,7 @@ export const AuthProvider = ({ children }) => {
     const handleUnauthorized = () => {
       setUser(null);
       setAccessToken(null);
+      sessionStorage.removeItem('access_token');
     };
 
     window.addEventListener('auth:unauthorized', handleUnauthorized);

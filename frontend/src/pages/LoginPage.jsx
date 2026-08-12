@@ -10,8 +10,14 @@ export const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, loginWithFirebaseToken, suspiciousLogin, clearSuspiciousNotice } = useAuth();
+  const { user, login, loginWithFirebaseToken, suspiciousLogin, clearSuspiciousNotice } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     // Check if returning from Firebase redirect
@@ -83,13 +89,14 @@ export const LoginPage = () => {
     try {
       const res = await signInWithGoogle();
       if (!res.success) {
-        setError(res.error || 'Firebase Google sign-in failed.');
+        if (res.useRedirect) return;
+        setError(res.error || 'Google sign-in failed. Please try again.');
         return;
       }
       await loginWithFirebaseToken(res.idToken);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.message || 'Firebase Google sign-in failed.');
+      setError(err.message || 'Google sign-in failed.');
     } finally {
       setLoading(false);
     }

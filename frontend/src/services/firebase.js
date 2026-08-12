@@ -3,9 +3,9 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRe
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyD-XQnO5__IsE2LRSD6davBjdPHQD1Zbiw",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "syncwrite-f84c1.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "syncwrite-f84c1",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "syncwrite-f84c1.firebasestorage.app",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "identity-system-f84c1.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "identity-system-f84c1",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "identity-system-f84c1.firebasestorage.app",
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "981744222364",
   appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:981744222364:web:d84e68c43b4fabb2852d59"
 };
@@ -44,9 +44,6 @@ export const checkFirebaseRedirectResult = async () => {
   return null;
 };
 
-/**
- * Trigger Google Sign-In via Popup (with automatic fallback to Redirect if popup is blocked)
- */
 export const signInWithGoogle = async () => {
   try {
     const result = await signInWithPopup(auth, googleProvider);
@@ -58,31 +55,31 @@ export const signInWithGoogle = async () => {
       idToken
     };
   } catch (error) {
-    console.error("Firebase Google Sign-In Error:", error);
+    console.warn("Firebase Google Popup Sign-In notice:", error);
 
-    // If popup is blocked by browser, trigger Firebase redirect fallback
-    if (error.code === 'auth/popup-blocked' || error.message?.includes('popup-blocked')) {
-      console.log("Popup blocked by browser. Switching to Firebase Redirect flow...");
-      await signInWithRedirect(auth, googleProvider);
-      return {
-        success: false,
-        redirecting: true,
-        error: "Popup was blocked by your browser. Redirecting to Google Sign-In..."
-      };
-    }
-
-    if (error.code === 'auth/unauthorized-domain' || error.message?.includes('unauthorized-domain')) {
-      const currentHost = window.location.hostname;
-      return {
-        success: false,
-        unauthorizedDomain: true,
-        error: `Firebase Domain Restriction: Please open the app using http://localhost:3000 (instead of ${currentHost}) or add ${currentHost} in Firebase Console -> Authentication -> Settings -> Authorized domains.`
-      };
+    // If popup is blocked by browser, fallback to Firebase Redirect flow
+    if (
+      error.code === 'auth/popup-blocked' ||
+      error.code === 'auth/popup-closed-by-user' ||
+      error.message?.includes('popup-blocked')
+    ) {
+      try {
+        await signInWithRedirect(auth, googleProvider);
+        return {
+          success: false,
+          useRedirect: true
+        };
+      } catch (redirectErr) {
+        return {
+          success: false,
+          error: redirectErr.message || "Firebase Google redirect sign-in failed."
+        };
+      }
     }
 
     return {
       success: false,
-      error: error.message || "Google sign-in failed."
+      error: error.message || "Google sign-in via Firebase failed."
     };
   }
 };

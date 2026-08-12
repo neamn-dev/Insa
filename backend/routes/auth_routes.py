@@ -335,9 +335,9 @@ def firebase_auth():
 # Google OAuth endpoints
 @auth_bp.route('/google/redirect', methods=['GET'])
 def google_redirect():
-    mode = request.args.get('mode', '')
-    if mode == 'direct' or not Config.GOOGLE_CLIENT_ID or 'YOUR_' in Config.GOOGLE_CLIENT_ID:
-        return handle_direct_google_login()
+    if not Config.GOOGLE_CLIENT_ID or 'YOUR_' in Config.GOOGLE_CLIENT_ID:
+        FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+        return redirect(f'{FRONTEND_URL}/login?error=google_auth_failed')
 
     try:
         state = str(uuid.uuid4())
@@ -356,7 +356,8 @@ def google_redirect():
         google_auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}"
         return redirect(google_auth_url)
     except Exception as e:
-        return handle_direct_google_login()
+        FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+        return redirect(f'{FRONTEND_URL}/login?error=google_auth_failed')
 
 def handle_direct_google_login():
     try:
@@ -427,30 +428,59 @@ def google_callback():
 
     try:
         import requests as http_requests
+        host_uri = f"{request.scheme}://{request.host}/api/auth/google/callback"
+        redirect_uri = Config.GOOGLE_REDIRECT_URI if Config.GOOGLE_REDIRECT_URI else host_uri
+
         token_response = http_requests.post('https://oauth2.googleapis.com/token', data={
             'code': code,
             'client_id': Config.GOOGLE_CLIENT_ID,
             'client_secret': Config.GOOGLE_CLIENT_SECRET,
-            'redirect_uri': Config.GOOGLE_REDIRECT_URI,
+            'redirect_uri': redirect_uri,
             'grant_type': 'authorization_code'
         })
         if token_response.status_code != 200:
-            print("[Google OAuth Error]", token_response.text)
+            print("[Google OAuth Token Exchange Error]", token_response.status_code, token_response.text)
             return redirect(f'{FRONTEND_URL}/login?error=token_exchange_failed')
 
         token_data = token_response.json()
+        google_access_token = token_data.get('access_token')
+        id_token_str = token_data.get('id_token')
+
         import jwt as pyjwt
-        user_info = pyjwt.decode(token_data.get('id_token'), options={"verify_signature": False})
+        user_info = pyjwt.decode(id_token_str, options={"verify_signature": False})
+
+        # Fetch extra UserInfo details if available
+        if google_access_token:
+            try:
+                u_resp = http_requests.get('https://www.googleapis.com/oauth2/v3/userinfo', headers={
+                    'Authorization': f'Bearer {google_access_token}'
+                })
+                if u_resp.status_code == 200:
+                    user_info.update(u_resp.json())
+            except Exception:
+                pass
 
         email = user_info.get('email')
         if not email:
             return redirect(f'{FRONTEND_URL}/login?error=google_auth_failed')
             
-        name = user_info.get('name', email.split('@')[0])
+        name = user_info.get('name') or user_info.get('given_name') or email.split('@')[0]
+        picture = user_info.get('picture')
 
         user = auth_service.get_user_by_email(email)
         if not user:
             user = auth_service.create_user(email, password=None, is_google=True, name=name)
+            if picture:
+                user.avatar_url = picture
+                from extensions import db
+                db.session.commit()
+        else:
+            if name and user.name != name:
+                user.name = name
+            if picture and user.avatar_url != picture:
+                user.avatar_url = picture
+            from extensions import db
+            db.session.commit()
 
         user_agent = request.headers.get('User-Agent', 'Unknown Browser')
         is_suspicious, _ = auth_service.check_suspicious_device(user.id, user_agent)
