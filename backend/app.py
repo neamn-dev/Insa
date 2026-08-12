@@ -77,18 +77,28 @@ def create_app():
     app.register_blueprint(version_bp)
     app.register_blueprint(user_bp)
 
-    # Static file serving
-    @app.route('/', defaults={'path': ''})
-    @app.route('/<path:path>')
-    def serve(path):
-        if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
-            return send_from_directory(app.static_folder, path)
-        else:
-            if os.path.exists(os.path.join(app.static_folder, 'index.html')):
-                return send_from_directory(app.static_folder, 'index.html')
-            return redirect('/login.html')
+    # Serve frontend index at root
+    @app.route('/')
+    def serve_index():
+        if os.path.exists(os.path.join(app.static_folder, 'index.html')):
+            return send_from_directory(app.static_folder, 'index.html')
+        return jsonify({"status": "success", "message": "SyncWrite Backend API is running."}), 200
 
-    # Create tables automatically inside app context
+    # SPA fallback: serve index.html for non-API 404s
+    @app.errorhandler(404)
+    def spa_fallback(e):
+        if request.path.startswith('/api/') or request.path.startswith('/socket.io/'):
+            return jsonify({"status": "fail", "message": "Endpoint not found."}), 404
+
+        rel_path = request.path.lstrip('/')
+        if rel_path and os.path.exists(os.path.join(app.static_folder, rel_path)):
+            return send_from_directory(app.static_folder, rel_path)
+
+        if os.path.exists(os.path.join(app.static_folder, 'index.html')):
+            return send_from_directory(app.static_folder, 'index.html')
+        return jsonify({"status": "fail", "message": "Not found."}), 404
+
+    # Create database tables automatically inside app context
     with app.app_context():
         try:
             db.create_all()
@@ -101,5 +111,5 @@ def create_app():
 app = create_app()
 
 if __name__ == '__main__':
-    print("SyncWrite Backend running on http://127.0.0.1:5000 with PostgreSQL")
-    socketio.run(app, host='127.0.0.1', port=5000, debug=True, allow_unsafe_werkzeug=True)
+    print("SyncWrite Backend running on http://localhost:5000 with PostgreSQL")
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)
